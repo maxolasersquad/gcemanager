@@ -207,6 +207,8 @@ def main():
             g = GUI()
             g.import_directory(sys.argv[2])
             sys.exit(0)
+    if not os.path.isdir(CONFIG_DIRECTORY):
+        os.mkdir(CONFIG_DIRECTORY)
     GUI()
     Gtk.main()
 
