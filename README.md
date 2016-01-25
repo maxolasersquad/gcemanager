@@ -2,7 +2,7 @@
 GNU Console Emulation Manager
 
 # About
-GCE Manager is intended to be a single place to manager all of your console and arcade roms and play them. It is intended to be similair to Calibre of ebooks.
+GCE Manager is intended to be a single place to manager all of your console and arcade roms and play them. It is intended to be similar to Calibre of ebooks.
 
 # Support Consoles and Emulators
 The following consoles are expected to be supported with the given emulators.
