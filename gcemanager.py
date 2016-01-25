@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk  # , Gdk, GLib
 import hashlib
 import json
 import os
 import sqlite3
 import sys
+import yaml
 from zipfile import ZipFile
 
 HOME = os.path.expanduser('~')
@@ -23,7 +24,7 @@ class GUI:
         self.window = self.builder.get_object('window_gce')
         self.builder.connect_signals(self)
         self.window.show_all()
-        self.romdatabase = RomDatabase()
+        self.rom_database = RomDatabase()
         self.database = Database()
 
     def show_preferences(self, widget):
@@ -32,7 +33,8 @@ class GUI:
     def show_about(self, widget):
         self.about.show()
 
-    def destroy(self, widget):
+    @staticmethod
+    def destroy(widget):
         Gtk.main_quit()
 
     def import_directory(self, directory):
@@ -44,11 +46,11 @@ class GUI:
                 for compressed_file in z.namelist():
                     if compressed_file[-4:] == '.nes':
                         hasher.update(z.open(compressed_file, 'r').read())
-                        rom = self.romdatabase.get_rom_by_hash(hasher.hexdigest())
+                        rom = self.rom_database.get_rom_by_hash(hasher.hexdigest())
             elif local_file[-4:] == '.nes':
                 with open(os.path.join(directory, local_file), 'rb') as afile:
                     hasher.update(afile.read())
-                rom = self.romdatabase.get_rom_by_hash(hasher.hexdigest())
+                rom = self.rom_database.get_rom_by_hash(hasher.hexdigest())
             if rom is not None:
                 self.database.import_rom(rom)
         print(str(self.database.inserts) + ' records inserted.' + chr(10))
@@ -57,10 +59,16 @@ class GUI:
 
 
 class Preferences:
+    rom_directory = os.path.join(HOME, "roms")
+    directory_layout = '{system}/{object}/{name}.{type}'
+
     def __init__(self):
         self.builder = Gtk.Builder()
         self.builder.add_from_file('main.glade')
         self.window = self.builder.get_object('window_preferences')
+        self.configuration_file = os.path.join(CONFIG_DIRECTORY, 'gcemanager.yml')
+        self.parse_config()
+        self.initialize_interface()
 
     def show(self):
         self.window.show_all()
@@ -71,6 +79,30 @@ class Preferences:
     def destroy(self, widget):
         print('Hiding preferences')
         self.hide()
+
+    def initialize_interface(self):
+        self.builder.get_object('entry_library_location').set_text(self.rom_directory)
+
+    def parse_config(self):
+        # Create the file if it doesn't already exist and accept defaults.
+        if not os.path.isfile(self.configuration_file):
+            return self.save()
+        # Load the file contents
+        with open(self.configuration_file, 'r+') as file:
+            preferences = yaml.load(file)
+        # Set preferences to self.
+        for key in preferences:
+            setattr(self, key, preferences[key])
+
+    def save(self):
+        with open(self.configuration_file, 'w') as file:
+            yaml.dump(
+                {
+                    'rom_directory': self.rom_directory,
+                    'directory_layout': self.directory_layout
+                },
+                file
+            )
 
 
 class About:
@@ -96,15 +128,15 @@ class Game:
     year = None
     genre = None
     language = None
-    hash = None
+    hash_key = None
 
-    def __init__(self, name, system, year, genre, language, hash):
+    def __init__(self, name, system, year, genre, language, hash_key):
         self.name = name
         self.system = system
         self.year = year
         self.genre = genre
         self.language = language
-        self.hash = hash
+        self.hash_key = hash_key
 
 
 class RomDatabase:
@@ -112,9 +144,9 @@ class RomDatabase:
         with open(ROM_DATABASE) as file:
             self.database = json.load(file)
 
-    def get_rom_by_hash(self, hash):
+    def get_rom_by_hash(self, hash_key):
         for rom in self.database:
-            if rom['hash'] == hash:
+            if rom['hash'] == hash_key:
                 return rom
 
 
@@ -148,12 +180,12 @@ create table
 
     def _has_table(self, table):
         cursor = self.database.cursor()
-        cursor.execute('select count(*) from sqlite_master where type=\'table\' and name=\'%s\'' % (table))
+        cursor.execute('select count(*) from sqlite_master where type=\'table\' and name=\'%s\'' % table)
         return cursor.fetchone()[0] == 1
 
-    def _check_by_hash(self, hash):
+    def _check_by_hash(self, hash_key):
         cursor = self.database.cursor()
-        cursor.execute('select count(*) from rom where hash=\'%s\'' % hash)
+        cursor.execute('select count(*) from rom where hash=\'%s\'' % hash_key)
         return cursor.fetchone()[0] == 1
 
     def import_rom(self, rom):
