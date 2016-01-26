@@ -18,7 +18,7 @@ class GUI:
 
     def __init__(self):
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('main.glade')
+        self.builder.add_from_file('ui/main.glade')
         self.about = About()
         self.preferences = Preferences()
         self.window = self.builder.get_object('window_gce')
@@ -53,22 +53,21 @@ class GUI:
                 rom = self.rom_database.get_rom_by_hash(hasher.hexdigest())
             if rom is not None:
                 self.database.import_rom(rom)
-        print(str(self.database.inserts) + ' records inserted.' + chr(10))
-        print(str(self.database.updates) + ' records updated.' + chr(10))
         self.database.database.commit()
 
 
 class Preferences:
-    rom_directory = os.path.join(HOME, "roms")
+    library_location = os.path.join(HOME, "roms")
     directory_layout = '{system}/{object}/{name}.{type}'
 
     def __init__(self):
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('main.glade')
+        self.builder.add_from_file('ui/preferences.glade')
         self.window = self.builder.get_object('window_preferences')
         self.configuration_file = os.path.join(CONFIG_DIRECTORY, 'gcemanager.yml')
         self.parse_config()
         self.initialize_interface()
+        self.builder.connect_signals(self)
 
     def show(self):
         self.window.show_all()
@@ -77,11 +76,10 @@ class Preferences:
         self.window.hide()
 
     def destroy(self, widget):
-        print('Hiding preferences')
         self.hide()
 
     def initialize_interface(self):
-        self.builder.get_object('entry_library_location').set_text(self.rom_directory)
+        self.builder.get_object('entry_library_location').set_text(self.library_location)
 
     def parse_config(self):
         # Create the file if it doesn't already exist and accept defaults.
@@ -98,17 +96,29 @@ class Preferences:
         with open(self.configuration_file, 'w') as file:
             yaml.dump(
                 {
-                    'rom_directory': self.rom_directory,
+                    'library_location': self.library_location,
                     'directory_layout': self.directory_layout
                 },
                 file
             )
 
+    def on_button_cancel_clicked(self, widget):
+        self.hide()
+        self.initialize_interface()
+
+    def on_button_apply_clicked(self, widget):
+        self.library_location = self.builder.get_object('entry_library_location').get_text()
+        self.save()
+
+    def on_button_ok_clicked(self, widget):
+        self.on_button_apply_clicked(widget)
+        self.hide()
+
 
 class About:
     def __init__(self):
         self.builder = Gtk.Builder()
-        self.builder.add_from_file('main.glade')
+        self.builder.add_from_file('ui/about.glade')
         self.window = self.builder.get_object('aboutdialog_gce')
 
     def show(self):
@@ -118,7 +128,6 @@ class About:
         self.window.hide()
 
     def destroy(self, widget):
-        print('Hiding about')
         self.hide()
 
 
