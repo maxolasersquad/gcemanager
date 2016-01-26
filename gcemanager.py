@@ -75,8 +75,9 @@ class Preferences:
     def hide(self):
         self.window.hide()
 
-    def destroy(self, widget):
+    def on_delete(self, window, event):
         self.hide()
+        return True
 
     def initialize_interface(self):
         self.builder.get_object('entry_library_location').set_text(self.library_location)

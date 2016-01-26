@@ -4,6 +4,7 @@
   <requires lib="gtk+" version="3.10"/>
   <object class="GtkWindow" id="window_preferences">
     <property name="can_focus">False</property>
+    <signal name="delete-event" handler="on_delete" swapped="no"/>
     <child>
       <object class="GtkBox" id="preferences_box">
         <property name="visible">True</property>
