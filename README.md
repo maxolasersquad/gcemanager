@@ -18,3 +18,5 @@ The following consoles are expected to be supported with the given emulators.
   * VisualBoyAdvance-M (https://github.com/visualboyadvance-m/visualboyadvance-m)
 * Sega Dreamcast
   * lxdream (http://www.lxdream.org/)
+* Sony Playstation
+  * PCSXR (http://pcsxr.codeplex.com/)
